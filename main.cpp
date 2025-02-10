@@ -50,34 +50,29 @@ int main()
         // }
         // 2 单张 sprite 尺寸
         // {
-        //     for (int i = 0; i < sp->GroupCount; ++i)
+        //     for (int i = 0; i < sp->Frames.size(); i++)
         //     {
-        //         for (int j = 0; j < sp->GroupFrameCount; ++j)
+        //         std::vector<uint32_t> pixels(sp->Width * sp->Height);
+        //         auto& frame = sp->Frames[i];
+        //         for (int row = 0; row < frame.Height; ++row)
         //         {
-        //             std::vector<uint32_t> pixels(sp->Width * sp->Height);
-        //             auto& frame = sp->Frames[i * sp->GroupFrameCount + j];
-        //             for (int row = 0; row < frame.Height; ++row)
-        //             {
-        //                 int index = (sp->KeyY - frame.KeyY + row) * sp->Width + sp->KeyX - frame.KeyX;
-        //                 memcpy(&pixels[index], &frame.Src[row * frame.Width], frame.Width * sizeof(uint32_t));
-        //             }
-        //             char fileName[200];
-        //             sprintf(fileName, "C:/Users/chend/Desktop/tga/%s_%02d%02d.tga", sp->ID.c_str(), i, j);
-        //             stbi_write_tga(fileName, sp->Width, sp->Height, 4, pixels.data());
+        //             int index = (sp->KeyY - frame.KeyY + row) * sp->Width + sp->KeyX - frame.KeyX;
+        //             memcpy(&pixels[index], &frame.Src[row * frame.Width], frame.Width * sizeof(uint32_t));
         //         }
+        //         char fileName[200];
+        //         sprintf(fileName, "C:/Users/chend/Desktop/tga/%s_%03d.tga", sp->ID.c_str(), i);
+        //         stbi_write_tga(fileName, sp->Width, sp->Height, 4, pixels.data());
         //     }
         // }
         // 3 单张 frame 尺寸
         {
-            for (int i = 0; i < sp->GroupCount; ++i)
+            for (int i = 0; i < sp->Frames.size(); i++)
             {
-                for (int j = 0; j < sp->GroupFrameCount; ++j)
-                {
-                    auto& frame = sp->Frames[i * sp->GroupFrameCount + j];
-                    char fileName[200];
-                    sprintf(fileName, "C:/Users/chend/Desktop/tga/%s_%02d%02d.tga", sp->ID.c_str(), i, j);
-                    stbi_write_tga(fileName, frame.Width, frame.Height, 4, frame.Src.data());
-                }
+                auto& frame = sp->Frames[i];
+                js["WasList"][sp->ID]["Frames"].emplace_back(nlohmann::json::object({{"Width", sp->Width}, {"Height", sp->Height}, {"KeyX", sp->KeyX}, {"KeyY", sp->KeyY}}));
+                char fileName[200];
+                sprintf(fileName, "C:/Users/chend/Desktop/tga/%s_%03d.tga", sp->ID.c_str(), i);
+                stbi_write_tga(fileName, frame.Width, frame.Height, 4, frame.Src.data());
             }
         }
     }
