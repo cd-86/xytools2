@@ -153,13 +153,14 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
             }
         default: break;
         }
+        wdf.UnLoadSprite(ind.hash);
     }
     std::fstream fs(outDir + "/list.json", std::ios::out);
     fs << js.dump();
     fs.close();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     WdfTest("C:/Users/chend/Desktop/shape.wdf", "C:/Users/chend/Desktop/tga", 0);
 }
