@@ -15,8 +15,6 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
     {
         std::filesystem::create_directory(outDir);
     }
-
-    // std::cout << std::hex;
     for (auto& ind : wdf.mIndencies)
     {
         auto sp = wdf.LoadSprite(ind.hash);
@@ -46,12 +44,36 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
                     for (int j = 0; j < sp->GroupFrameCount; ++j)
                     {
                         auto& frame = sp->Frames[i * sp->GroupFrameCount + j];
-                        for (int row = 0; row < frame.Height; ++row)
+                        int frameWidth = frame.Width;
+                        int frameHeight = frame.Height;
+                        if (int w = sp->KeyX - frame.KeyX + frame.Width - sp->Width; w > 0)
                         {
-                            int index = (i * sp->Height + sp->KeyY - frame.KeyY + row) * sheetWidth + j * sp->Width + sp
-                                ->
-                                KeyX - frame.KeyX;
-                            memcpy(&pixels[index], &frame.Src[row * frame.Width], frame.Width * sizeof(uint32_t));
+                            frameWidth -= w;
+                        }
+                        if (int h = sp->KeyY - frame.KeyY + frame.Height - sp->Height; h > 0)
+                        {
+                            frameHeight -= h;
+                        }
+                        for (int row = 0; row < frameHeight; ++row)
+                        {
+                            int yoff = sp->KeyY - frame.KeyY + row;
+                            if (yoff < 0)
+                            {
+                                // 裁剪
+                                continue;
+                            }
+                            int xoff = sp->KeyX - frame.KeyX;
+                            if (xoff < 0)
+                            {
+                                // 裁剪
+                                int index = (i * sp->Height + yoff) * sheetWidth + j * sp->Width;
+                                memcpy(&pixels[index], &frame.Src[row * frame.Width - xoff], (frameWidth + xoff) * sizeof(uint32_t));
+                            }
+                            else
+                            {
+                                int index = (i * sp->Height + yoff) * sheetWidth + j * sp->Width + xoff;
+                                memcpy(&pixels[index], &frame.Src[row * frame.Width], frameWidth * sizeof(uint32_t));
+                            }
                         }
                     }
                 }
@@ -69,12 +91,12 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
                     int frameHeight = frame.Height;
                     if (int w = sp->KeyX - frame.KeyX + frame.Width - sp->Width; w > 0)
                     {
-                        std::cout << "Cutting width: " << ind.hash << ", " << w << std::endl;
+                        // std::cout << "Cutting width: " << ind.hash << ", " << w << std::endl;
                         frameWidth -= w;
                     }
                     if (int h = sp->KeyY - frame.KeyY + frame.Height - sp->Height; h > 0)
                     {
-                        std::cout << "Cutting height: " << ind.hash << ", " << h << std::endl;
+                        // std::cout << "Cutting height: " << ind.hash << ", " << h << std::endl;
                         frameHeight -= h;
                     }
                     for (int row = 0; row < frameHeight; ++row)
@@ -83,14 +105,14 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
                         if (yoff < 0)
                         {
                             // 裁剪
-                            std::cout << "Cutting yoff: " << ind.hash << ", " << yoff << std::endl;
+                            // std::cout << "Cutting yoff: " << ind.hash << ", " << yoff << std::endl;
                             continue;
                         }
                         int xoff = sp->KeyX - frame.KeyX;
                         if (xoff < 0)
                         {
                             // 裁剪
-                            std::cout << "Cutting xoff: " << ind.hash << ", " << xoff << std::endl;
+                            // std::cout << "Cutting xoff: " << ind.hash << ", " << xoff << std::endl;
                             memcpy(&pixels[yoff * sp->Width], &frame.Src[row * frame.Width - xoff],
                                    (frameWidth + xoff) * sizeof(uint32_t));
                         }
@@ -100,9 +122,9 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
                                    frameWidth * sizeof(uint32_t));
                         }
                     }
-                    // char fileName[200];
-                    // sprintf(fileName, "%s/%s_%03d.tga", outDir.c_str(), sp->ID.c_str(), i);
-                    // stbi_write_tga(fileName, sp->Width, sp->Height, 4, pixels.data());
+                    char fileName[200];
+                    sprintf(fileName, "%s/%s_%03d.tga", outDir.c_str(), sp->ID.c_str(), i);
+                    stbi_write_tga(fileName, sp->Width, sp->Height, 4, pixels.data());
                 }
                 break;
             }
@@ -130,5 +152,5 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
 
 int main()
 {
-    WdfTest("C:/Users/chend/Desktop/shape.wdf", "C:/Users/chend/Desktop/tga", 1);
+    WdfTest("C:/Users/chend/Desktop/shape.wdf", "C:/Users/chend/Desktop/tga", 0);
 }
