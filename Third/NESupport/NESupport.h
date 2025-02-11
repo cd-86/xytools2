@@ -206,7 +206,7 @@ namespace NE {
 		std::string m_FileName;
 		uint32_t m_FileDataOffset;
 		uint32_t m_WASNumber;
-		uint32_t m_FileType;
+		uint32_t m_FileType {0};
 
 		std::vector<uint8_t> m_FileData;
 		std::uint64_t m_FileSize;
