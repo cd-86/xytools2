@@ -4,6 +4,14 @@
 #include <stb_image_write.h>
 #include <json.hpp>
 
+
+/**
+ * 导出精灵表或单张精灵图
+ *
+ * @param wdfPath Wdf 路径
+ * @param outDir 输出目录
+ * @param mode 输出文件模式 \n 0： 合并为一张精灵表保存 \n 1：精灵尺寸保存每一张精灵图 \n 2：原始尺寸保存每一张精灵图
+ */
 void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
 {
     nlohmann::json js;
@@ -26,6 +34,7 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
             {"ID", sp->ID},
             {"GroupCount", sp->GroupCount},
             {"GroupFrameCount", sp->GroupFrameCount},
+            {"Times", sp->Times},
             {"Width", sp->Width},
             {"Height", sp->Height},
             {"KeyX", sp->KeyX},
