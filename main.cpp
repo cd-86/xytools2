@@ -25,6 +25,55 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
     }
     for (auto& ind : wdf.mIndencies)
     {
+        auto wasType = wdf.GetWasType(ind.hash);
+        std::cout << ind.hash << " " << wasType << std::endl;
+        if (wasType != NE::eFILE_TYPE_SPRITE) {
+            std::string suffix;
+            switch (wdf.GetWasType(ind.hash)) {
+                case NE::eFILE_TYPE_TGA:
+                    suffix = ".tga";
+                break;
+                case NE::eFILE_TYPE_PNG:
+                    suffix = ".png";
+                break;
+                case NE::eFILE_TYPE_JPEG:
+                    suffix = ".jpeg";
+                break;
+                case NE::eFILE_TYPE_BMP:
+                    suffix = ".bmp";
+                break;
+                case NE::eFILE_TYPE_FSB4: // fmod
+                    suffix = ".fmod";
+                break;
+                case NE::eFILE_TYPE_OGGS:
+                    suffix = ".oggs";
+                break;
+                case NE::eFILE_TYPE_MP3:
+                    suffix = ".mp3";
+                break;
+                case NE::eFILE_TYPE_WAV: // WAV
+                    suffix = ".wav";
+                break;
+                case NE::eFILE_TYPE_ACON: // ani
+                    suffix = ".ani";
+                break;
+                case NE::eFILE_TYPE_TEXT:
+                    suffix = ".text";
+                break;
+                case NE::eFILE_TYPE_RAR: // rar
+                    suffix = ".rar";
+                break;
+                case NE::eFILE_TYPE_UNKNOWN:
+                    default: ;
+            }
+            uint8_t *data;
+            size_t size;
+            wdf.LoadFileData(ind.hash, data, size);
+            std::string fileName = outDir + "/" + std::to_string(ind.hash) + suffix;
+            std::fstream fs(fileName, std::ios::out | std::ios::binary);
+            fs.write((char*)data, size);
+            continue;
+        }
         auto sp = wdf.LoadSprite(ind.hash);
         if (!sp)
         {
@@ -162,5 +211,5 @@ void WdfTest(const std::string& wdfPath, const std::string& outDir, int mode)
 
 int main(int argc, char* argv[])
 {
-    WdfTest("C:/Users/chend/Desktop/shape.wdf", "C:/Users/chend/Desktop/tga", 0);
+    WdfTest("C:/games/dhxy/gires.wdf", "C:/games/dhxy/gires", 0);
 }
