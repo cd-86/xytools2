@@ -41,9 +41,11 @@ namespace XY2
         bool load(char* data, size_t size);
 
     private:
-        void readFrame(char* data, size_t size, const std::vector<RGBA>& palette, Frame& frame);
+        bool readFrame(char* data, size_t size, const std::vector<uint16_t>& palette16, const std::vector<RGBA>& palette32, Frame& frame);
 
         void RGB565ToRGBA8888(uint16_t src, uint8_t alpha, RGBA& dst);
+
+        uint16_t Alpha565(uint16_t Src, uint16_t Des, uint8_t Alpha);
 
     public:
         SpriteHeader* m_header;

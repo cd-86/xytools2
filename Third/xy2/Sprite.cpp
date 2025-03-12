@@ -29,13 +29,16 @@ namespace XY2
             offset += timesSize;
         }
 
-        std::vector<RGBA> palette(256);
-        uint16_t* rgb565 = (uint16_t*)(data + offset);
+        std::vector<uint16_t> palette16(256);
+        memcpy(&palette16[0], data + offset, 256 * sizeof(uint16_t));
+        offset += 256 * sizeof(uint16_t);
+
+        std::vector<RGBA> palette32(256);
         for (int i = 0; i < 256; ++i)
         {
-            RGB565ToRGBA8888(*(rgb565 + i), 255, palette[i]);
+            RGB565ToRGBA8888(palette16[i], 255, palette32[i]);
         }
-        offset += 256 * sizeof(uint16_t);
+
 
         int picNum = m_header->directionNum * m_header->frameNum;
         std::vector<uint32_t> picOffsets(picNum);
@@ -58,16 +61,23 @@ namespace XY2
                 continue;
             }
             auto& frame = m_frames[i];
-            readFrame(data + offset, frameSize, palette, frame);
+            if (!readFrame(data + offset, frameSize, palette16, palette32, frame))
+                return m_isValid;
             offset += frameSize;
         }
         m_isValid = true;
         return m_isValid;
     }
 
-    void Sprite::readFrame(char* data, size_t size, const std::vector<RGBA>& palette, Frame& frame)
+    bool Sprite::readFrame(char* data, size_t size, const std::vector<uint16_t>& palette16, const std::vector<RGBA>& palette32, Frame& frame)
     {
         memcpy(&frame, data, offsetof(Frame, pixels));
+
+        if (frame.height >= (1 << 15) || frame.width >= (1 << 15) || frame.height < 0 || frame.width < 0) {
+            std::cerr << "Frame error  W: " << frame.width << " H: "<< frame.height << std::endl;
+            return false;
+        }
+
         uint32_t offset = offsetof(Frame, pixels);
 
         // std::vector<uint32_t> frameLineOffset(frame.height);
@@ -78,10 +88,15 @@ namespace XY2
         frame.pixels.resize(frame.height * frame.width);
         // std::vector<RGBA> rgba(frame.height * frame.width);
         uint32_t pos = 0;
+        uint16_t alphaPixel = 0;
         for (uint32_t h = 0; h < frame.height; h++)
         {
             uint32_t linePixels = 0;
             bool lineNotOver = true;
+            if (frameLineOffset[h] >= size) {
+                std::cerr << "Frame error" << std::endl;
+                return false;
+            }
             uint8_t* pData = (uint8_t*)data + frameLineOffset[h];
 
             while (*pData != 0 && lineNotOver)
@@ -121,8 +136,8 @@ namespace XY2
                         pData++; // 下一个字节
                         if (linePixels <= frame.width)
                         {
-                            frame.pixels[pos] = palette[*pData];
-                            frame.pixels[pos].A = (level << 3) | 7 - 1;
+                            alphaPixel = Alpha565(palette16[*pData], 0, level);
+                            RGB565ToRGBA8888(alphaPixel, level * 8, frame.pixels[pos]);
                             linePixels++;
                             pos++;
                             pData++;
@@ -142,8 +157,8 @@ namespace XY2
                         pData++;
                         level = *pData; // 获得Alpha通道值
                         pData++;
-                        color = palette[*pData];
-                        color.A = (level << 3) | 7 - 1;
+                        alphaPixel = Alpha565(palette16[*pData], 0, level);
+                        RGB565ToRGBA8888(alphaPixel, level * 8, color);
                         for (int i = 1; i <= repeat; i++)
                         {
                             if (linePixels <= frame.width)
@@ -169,7 +184,7 @@ namespace XY2
                     {
                         if (linePixels <= frame.width)
                         {
-                            frame.pixels[pos] = palette[*pData];
+                            frame.pixels[pos] = palette32[*pData];
                             pos++;
                             linePixels++;
                             pData++;
@@ -185,7 +200,7 @@ namespace XY2
                         // {10  +重复1~63次}+{0~255个调色板引索},{10000000}保留。
                             repeat = (*pData) & 0x3f; // 获得重复的次数
                     pData++;
-                    color = palette[*pData];
+                    color = palette32[*pData];
                     for (int i = 1; i <= repeat; i++)
                     {
                         if (linePixels <= frame.width)
@@ -249,6 +264,7 @@ namespace XY2
                 }
             }
         }
+        return true;
     }
 
 
@@ -262,5 +278,44 @@ namespace XY2
         dst.G = (g << 2) | (g >> 4);
         dst.B = (b << 3) | (b >> 2);
         dst.A = alpha;
+    }
+
+    uint16_t Sprite::Alpha565(uint16_t Src, uint16_t Des, uint8_t Alpha) {
+        uint16_t Result;
+        // after mix = ( ( A-B ) * Alpha ) >> 5 + B
+        // after mix = ( A * Alpha + B * ( 32-Alpha ) ) / 32
+
+        unsigned short R_Src, G_Src, B_Src;
+        R_Src = G_Src = B_Src = 0;
+
+        R_Src = Src & 0xF800;
+        G_Src = Src & 0x07E0;
+        B_Src = Src & 0x001F;
+
+        R_Src = R_Src >> 11;
+        G_Src = G_Src >> 5;
+
+        unsigned short R_Des, G_Des, B_Des;
+        R_Des = G_Des = B_Des = 0;
+
+        R_Des = Des & 0xF800;
+        G_Des = Des & 0x07E0;
+        B_Des = Des & 0x001F;
+
+        R_Des = R_Des >> 11;
+        G_Des = G_Des >> 5;
+
+        unsigned short R_Res, G_Res, B_Res;
+        R_Res = G_Res = B_Res = 0;
+
+        R_Res = (((R_Src - R_Des) * Alpha) >> 5) + R_Des;
+        G_Res = (((G_Src - G_Des) * Alpha) >> 5) + G_Des;
+        B_Res = (((B_Src - B_Des) * Alpha) >> 5) + B_Des;
+
+        R_Res = R_Res << 11;
+        G_Res = G_Res << 5;
+
+        Result = R_Res | G_Res | B_Res;
+        return Result;
     }
 }
