@@ -11,7 +11,10 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(Third/NESupport)
 add_subdirectory(Third/stb)
 add_subdirectory(Third/nlohmann_json)
+add_subdirectory(Third/xy2)
 
-add_executable(xyTools2 main.cpp)
+add_executable(xyTools2 main.cpp
+        utils.cpp
+        utils.h)
 
-target_link_libraries(xyTools2 PUBLIC nesupport stb nlohmann_json)
+target_link_libraries(xyTools2 PUBLIC nesupport stb nlohmann_json XY2)
