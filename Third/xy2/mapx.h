@@ -32,6 +32,7 @@ public:
 
 	struct MaskInfo : BasicMaskInfo {
 		int id;
+		std::vector<uint8_t> Mask;
 		std::vector<uint8_t> RGBA;
 		std::set<int> OccupyBlocks;
 		uint32_t MaskOffset;
@@ -84,6 +85,7 @@ public:
 	bool HasMaskLoaded(int index) { return m_Masks[index].bHasLoad; };
 
 	uint8_t* GetMaskRGBA(int index) { return m_Masks[index].RGBA.data(); };
+	uint8_t* GetMask(int index) { return m_Masks[index].Mask.data(); };
 
 	void EraseMaskRGB(int index) { std::vector<uint8_t> v; m_Masks[index].RGBA.swap(v); m_Masks[index].bHasLoad = false; };
 

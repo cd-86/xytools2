@@ -8,6 +8,10 @@
 #include <Sprite.h>
 #include <wdf.h>
 
+#include <mapx.h>
+
+#include "utils.h"
+
 unsigned int string_id(const char *str) {
     int i;
     unsigned int v;
@@ -511,6 +515,86 @@ void wdf_export_xy2(const std::string &wdfPath, const std::string &outDir, int m
     if (js.empty())
         return;
     std::fstream fs(outDir + "/list.json", std::ios::out);
+    fs << js.dump();
+    fs.close();
+}
+
+void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
+    if (!std::filesystem::exists(outDir) || !std::filesystem::is_directory(outDir)) {
+        try {
+            std::filesystem::create_directory(outDir);
+        } catch (std::exception &e) {
+            std::cout << e.what() << std::endl;
+            throw;
+        }
+    }
+
+    nlohmann::json js;
+    MapX map(mapPath, 0);
+
+    std::cout << "Width: " << map.GetWidth() << " Height: " << map.GetHeight() << std::endl;
+
+    js["Width"] = map.GetWidth();
+    js["Height"] = map.GetHeight();
+    js["BlockRow"] = map.GetRowCount();
+    js["BlockColumn"] = map.GetColCount();
+    js["CellRow"] = map.GetCellRowCount();
+    js["CellColumn"] = map.GetCellColCount();
+    js["BlockWidth"] = map.GetBlockWidth();
+    js["BlockHeight"] = map.GetBlockHeight();
+    js["MaskCount"] = map.GetMaskCount();
+    // Cell
+    js["Cell"] = nlohmann::json::array();
+    uint32_t *cell = map.GetCell();
+    for (int i = 0; i < map.GetCellRowCount(); ++i) {
+        js["Cell"].emplace_back(nlohmann::json::array());
+        for (int j = 0; j < map.GetCellColCount(); ++j) {
+            js["Cell"][i].emplace_back(*cell);
+            cell++;
+        }
+    }
+    // Mask
+    js["Mask"] = nlohmann::json::array();
+    for (int i = 0; i < map.GetMaskCount(); i++) {
+        std::cout << "Mask: " << i << std::endl;
+        map.ReadMaskOrigin(i);
+        auto info = map.GetMaskInfo(i);
+        js["Mask"].emplace_back(nlohmann::json::object({
+            {"X" , info->StartX},
+            {"Y", info->StartY},
+            {"Width", info->Width},
+            {"Height", info->Height},
+            {"OccupyBlocks", info->OccupyBlocks}
+        }));
+        char fileName[200];
+        sprintf(fileName, "%s/mask_%04d.tga", outDir.c_str(), i);
+        stbi_write_tga(fileName, info->Width, info->Height, 1, map.GetMask(i));
+    }
+    // Block
+    std::vector<uint8_t> img(map.GetRowCount() * map.GetColCount() * map.GetBlockWidth() * map.GetBlockHeight() * 3);
+    for (int i = 0; i < map.GetRowCount(); ++i) {
+        for (int j = 0; j < map.GetColCount(); ++j) {
+            int indx = i * map.GetColCount() + j;
+            std::cout << "Block: " << indx << std::endl;
+            map.ReadJPEG(indx);
+            char fileName[200];
+            sprintf(fileName, "%s/block_%04d.tga", outDir.c_str(), indx);
+            stbi_write_tga(fileName, map.GetBlockWidth(), map.GetBlockHeight(), 3, map.GetJPEGRGB(indx));
+
+            int offset = i * map.GetColCount() * map.GetBlockWidth() * map.GetBlockHeight() + j * map.GetBlockWidth();
+            for (int k = 0; k < map.GetBlockHeight(); ++k) {
+                memcpy(img.data() + offset * 3, map.GetJPEGRGB(indx) + k * map.GetBlockWidth() * 3, map.GetBlockWidth() * 3);
+                offset += map.GetBlockWidth() * map.GetColCount();
+            }
+        }
+    }
+    char fileName[200];
+    sprintf(fileName, "%s/map.tga", outDir.c_str());
+    stbi_write_tga(fileName, map.GetColCount() * map.GetBlockWidth(), map.GetRowCount() * map.GetBlockHeight() , 3, img.data());
+
+    if (js.empty())
+        return;
+    std::fstream fs(outDir + "/info.json", std::ios::out);
     fs << js.dump();
     fs.close();
 }

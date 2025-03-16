@@ -13,4 +13,6 @@ unsigned int string_id(const char* str);
 void wdf_export_nes(const std::string &wdfPath, const std::string &outDir, int mode);
 
 void wdf_export_xy2(const std::string &wdfPath, const std::string &outDir, int mode);
+
+void map_export_xy2(const std::string &mapPath, const std::string &outDir);
 #endif //UTILS_H

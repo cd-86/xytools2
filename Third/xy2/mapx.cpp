@@ -572,7 +572,7 @@ void MapX::ReadMaskOrigin(int index) {
 	DecompressMask(pData.data(), pMaskDataDec.data());
 
 	// 至此所需图块全部加载完毕，现在读取像素
-	m_Masks[index].RGBA.resize(m_Masks[index].Width * m_Masks[index].Height * 4, 255);
+	m_Masks[index].Mask.resize(m_Masks[index].Width * m_Masks[index].Height, 255);
 
 	int maskIndex = 0;
 	for (int i = 0; i < m_Masks[index].Height; i++) {
@@ -594,7 +594,7 @@ void MapX::ReadMaskOrigin(int index) {
 					cur = (m_Masks[index].Height - 1 - i) * m_Masks[index].Width + j;
 				}
 
-				m_Masks[index].RGBA[cur * 4 + 3] = flag == 3 ? 150 : 1;
+				m_Masks[index].Mask[cur] = flag == 3 ? 150 : 0;
 			}
 		}
 		if (counter4 != 0) {
