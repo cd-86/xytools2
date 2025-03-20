@@ -528,7 +528,7 @@ void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
             throw;
         }
     }
-
+    char fileName[200];
     nlohmann::json js;
     MapX map(mapPath, 0);
 
@@ -544,15 +544,19 @@ void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
     js["BlockHeight"] = map.GetBlockHeight();
     js["MaskCount"] = map.GetMaskCount();
     // Cell
-    js["Cell"] = nlohmann::json::array();
-    uint32_t *cell = map.GetCell();
-    for (int i = 0; i < map.GetCellRowCount(); ++i) {
-        js["Cell"].emplace_back(nlohmann::json::array());
-        for (int j = 0; j < map.GetCellColCount(); ++j) {
-            js["Cell"][i].emplace_back(*cell);
-            cell++;
-        }
-    }
+    // js["Cell"] = nlohmann::json::array();
+    // uint8_t *cell = map.GetCell();
+    // for (int i = 0; i < map.GetCellRowCount(); ++i) {
+    //     js["Cell"].emplace_back(nlohmann::json::array());
+    //     for (int j = 0; j < map.GetCellColCount(); ++j) {
+    //         js["Cell"][i].emplace_back(*cell);
+    //         cell++;
+    //     }
+    // }
+    std::fstream cellFile(outDir + "/cell.bin", std::ios::out | std::ios::binary);
+    cellFile.write((char*)map.GetCell(), map.GetCellRowCount() * map.GetCellColCount());
+    cellFile.close();
+
     // Mask
     js["Mask"] = nlohmann::json::array();
     for (int i = 0; i < map.GetMaskCount(); i++) {
@@ -566,7 +570,6 @@ void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
             {"Height", info->Height},
             {"OccupyBlocks", info->OccupyBlocks}
         }));
-        char fileName[200];
         sprintf(fileName, "%s/mask_%04d.tga", outDir.c_str(), i);
         stbi_write_tga(fileName, info->Width, info->Height, 1, map.GetMask(i));
     }
@@ -588,13 +591,12 @@ void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
             }
         }
     }
-    char fileName[200];
     sprintf(fileName, "%s/map.tga", outDir.c_str());
     stbi_write_tga(fileName, map.GetColCount() * map.GetBlockWidth(), map.GetRowCount() * map.GetBlockHeight() , 3, img.data());
 
     if (js.empty())
         return;
-    std::fstream fs(outDir + "/info.json", std::ios::out);
-    fs << js.dump();
-    fs.close();
+    std::fstream jsonFile(outDir + "/info.json", std::ios::out);
+    jsonFile << js.dump();
+    jsonFile.close();
 }

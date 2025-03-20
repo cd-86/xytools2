@@ -91,7 +91,7 @@ public:
 
 	// Cell
 
-	uint32_t* GetCell() { return m_Cell.data(); };
+	uint8_t* GetCell() { return m_Cell.data(); };
 
 	// Map
 
@@ -163,7 +163,7 @@ private:
 
 	int m_CellColCount;  //
 
-	std::vector<uint32_t> m_Cell;
+	std::vector<uint8_t> m_Cell;
 
 	uint32_t m_BlockCount;  // 地图块数量
 
