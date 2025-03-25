@@ -553,9 +553,17 @@ void map_export_xy2(const std::string &mapPath, const std::string &outDir) {
     //         cell++;
     //     }
     // }
+    // 保存原始数据 导航使用
     std::fstream cellFile(outDir + "/cell.bin", std::ios::out | std::ios::binary);
     cellFile.write((char*)map.GetCell(), map.GetCellRowCount() * map.GetCellColCount());
     cellFile.close();
+    // 保存为 cell 图片 调试使用
+    std::vector<uint8_t> outData(map.GetCellRowCount() * map.GetCellColCount());
+    for (int i = 0; i < outData.size(); i++)
+    {
+        outData[i] = map.GetCell()[i] == 0 ? 0 : map.GetCell()[i] == 1 ? 128 : 255;
+    }
+    stbi_write_tga((outDir + "/cell.tga").c_str(), map.GetCellColCount(), map.GetCellRowCount(), 1, outData.data());
 
     // Mask
     js["Mask"] = nlohmann::json::array();

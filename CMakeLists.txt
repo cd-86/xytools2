@@ -6,6 +6,8 @@ if (MSVC)
     add_compile_options("/source-charset:utf-8" "/execution-charset:utf-8")
 endif ()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
+
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Third/NESupport)
